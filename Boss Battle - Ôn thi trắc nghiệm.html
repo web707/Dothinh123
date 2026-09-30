@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="vi"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Boss Battle – Ôn thi trắc nghiệm</title>
+<style>
+:root{--bg:#f4f1ff;--card:#fff;--tx:#1d1b2e;--mu:#6b6885;--ac:#7c4dff;--ok:#16a34a;--no:#dc2626;--bd:#ddd8f5;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#14122a;--card:#201d3d;--tx:#eeebff;--mu:#9a96c0;--bd:#38336a}}
+:root[data-theme="dark"]{--bg:#14122a;--card:#201d3d;--tx:#eeebff;--mu:#9a96c0;--bd:#38336a}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5}
+.w{max-width:640px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:16px;margin-bottom:12px}
+h1{font-size:22px;margin:4px 0 12px}textarea{width:100%;height:170px;border:1px solid var(--bd);border-radius:10px;padding:10px;background:var(--bg);color:var(--tx);font:13px/1.4 ui-monospace,monospace}
+button,label.b{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:10px 16px;background:var(--ac);color:#fff;font-weight:600;display:inline-block}
+button.g,label.b{background:transparent;color:var(--ac);border:1px solid var(--ac)}
+.opt{display:block;width:100%;text-align:left;margin:8px 0;background:var(--bg);color:var(--tx);border:2px solid var(--bd);font-weight:500}
+.opt.ok{border-color:var(--ok);background:rgba(22,163,74,.18)}.opt.no{border-color:var(--no);background:rgba(220,38,38,.18)}
+.bar{height:14px;background:var(--bd);border-radius:9px;overflow:hidden}.bar i{display:block;height:100%;transition:width .4s}
+.row{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:14px;color:var(--mu)}
+.boss{font-size:64px;text-align:center;line-height:1.1;transition:transform .2s}
+.hit{animation:s .4s}@keyframes s{25%{transform:translateX(-10px) rotate(-6deg)}75%{transform:translateX(10px) rotate(6deg)}}
+.hide{display:none}#game>.card:first-child{position:relative}
+.pop{position:absolute;left:50%;top:25%;font-weight:800;font-size:20px;white-space:nowrap;transform:translateX(-50%);animation:up 1.1s forwards;pointer-events:none}
+@keyframes up{to{transform:translate(-50%,-60px);opacity:0}}
+.cf{position:fixed;top:-30px;font-size:24px;animation:fall 2.4s linear forwards;pointer-events:none;z-index:9}
+@keyframes fall{to{transform:translateY(105vh) rotate(360deg)}}.c{text-align:center}.q{font-size:18px;font-weight:600;margin:6px 0}
+small{color:var(--mu)}select{font:inherit;padding:6px;border-radius:8px;background:var(--bg);color:var(--tx);border:1px solid var(--bd);max-width:100%}
+</style></head><body><div class="w">
+<div id="setup">
+ <h1>⚔️ Boss Battle – Ôn thi</h1>
+ <div class="card">
+  <b>1. Nạp đề của bạn</b><br><small>Dán vào ô dưới hoặc tải file .txt. Mỗi câu có dạng: câu hỏi, các dòng A. B. C. D., rồi dòng <code>Đáp án: B</code> (hoặc gắn dấu * trước đáp án đúng).</small>
+  <textarea id="ta"></textarea>
+  <p><label class="b">📂 Tải file .txt<input type="file" id="f" accept=".txt,.md,.csv" hidden></label>
+  <button class="g" id="samp">Dùng đề mẫu</button></p>
+  <div id="msg"></div>
+ </div>
+ <div class="card"><b>2. Tuỳ chọn</b><br>Đánh: <select id="ms"></select><br><label><input type="checkbox" id="tm"> Đếm giờ 20 giây / câu</label></div>
+ <button id="go" style="width:100%;font-size:18px">🔥 Vào trận!</button>
+ <p><small>🎮 Combo 3 = 🔮 loại 2 đáp án sai · Combo 5 = 🛡️ khiên + CRIT nhân đôi XP · Phím 1-4 chọn đáp án, Enter để tiếp.</small></p><p><small>File Word/PDF thì copy chữ ra dán vào, hoặc gửi file cho Claude trong chat để được chuyển sang đúng định dạng.</small></p>
+</div>
+<div id="game" class="hide">
+ <div class="card">
+  <button class="g" id="mu" style="position:absolute;right:10px;top:10px;padding:2px 8px">🔊</button><div class="boss" id="boss">👹</div>
+  <div class="row"><span id="bn">Boss</span><span id="bt"></span></div>
+  <div class="bar"><i id="bh" style="background:var(--no)"></i></div>
+  <div class="row" style="margin-top:10px"><span id="hp"></span><span id="cb"></span><span id="xp"></span></div>
+  <div class="bar hide" id="tb" style="height:6px;margin-top:8px"><i id="tf" style="background:var(--ac)"></i></div>
+ </div>
+ <div class="card"><div class="q" id="qt"></div><div id="ops"></div><div id="pw" class="c"></div><div id="fb" class="c"></div></div>
+</div>
+<div id="end" class="hide card c"><div class="boss" id="ei"></div><h1 id="et"></h1><p id="es"></p><div id="hd" style="text-align:left;font-size:14px;margin:10px 0"></div><button id="re">Đánh lại</button> <button class="g" id="bk">Đổi đề</button></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+const SAMPLE=`PHẦN 1: Kiến thức chung
+Câu 1. Thủ đô của Việt Nam là gì?
+A. Huế
+B. Hà Nội
+C. Đà Nẵng
+D. Hải Phòng
+Đáp án: B
+
+Câu 2. H2O là công thức của chất nào?
+A. Muối
+B. Oxy
+*C. Nước
+D. Cacbon
+
+PHẦN 2: Toán
+Câu 3. 7 x 8 = ?
+A. 54
+B. 56
+C. 58
+D. 64
+Đáp án: B`;
+const LET="ABCDEF";
+function parse(t){const qs=[],secs=[];let c=null,bad=0;
+ const fin=()=>{if(!c)return;if(c.o.length>=2&&c.a>=0)qs.push(c);else bad++;c=null};
+ let ex=false;
+ for(let raw of t.split(/\r?\n/)){const l=raw.trim();if(!l){ex=false;continue}
+  if(/^(phần|phan|part|chương|chuong)\s*[\dIVXivx]+(\s|[:\-\.]|$)/i.test(l)){if(!secs.length&&(c||qs.length))secs.push("Mở đầu");fin();secs.push(l);ex=false;continue}
+  let m=l.match(/^(đáp án|dap an|đa|answer|ans|key)\s*[:\-]\s*([A-Fa-f])\b/i);
+  if(m&&c){c.a=LET.indexOf(m[2].toUpperCase());ex=false;continue}
+  m=l.match(/^(giải thích|giai thich|explanation|gt)\s*[:\-]\s*(.*)/i);
+  if(m&&c){c.e=m[2];ex=true;continue}
+  if(ex&&c&&!/^(câu\s*\d+|\d+\s*[\.\)])/i.test(l)){c.e+=" "+l;continue}
+  ex=false;
+  m=l.match(/^(\*?)\s*([A-Fa-f])[\.\):]\s+(.+)/);
+  if(m&&c){c.o.push(m[3]);if(m[1])c.a=c.o.length-1;continue}
+  const tx=l.replace(/^(câu\s*)?\d+\s*[\.\):]\s*/i,"");
+  if(c&&!c.o.length)c.q+=" "+tx;else{fin();c={q:tx,o:[],a:-1,e:"",s:Math.max(secs.length-1,0)}}}
+ fin();if(!secs.length)secs.push("Đề");return{qs,bad,secs}}
+const sh=a=>{a=[...a];for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]]}return a};
+let Q=[],SECS=[],S={},tmr;
+try{$("ta").value=localStorage.getItem("bb_text")||""}catch(e){}
+function refresh(){const p=parse($("ta").value),m=$("ms");m.innerHTML="";
+ if(p.secs.length>1)m.add(new Option("Tất cả "+p.secs.length+" boss (lần lượt)","all"));
+ p.secs.forEach((n,i)=>{const k=p.qs.filter(q=>q.s===i).length;if(k)m.add(new Option("Chỉ "+n+" ("+k+" câu)",i))});
+ $("msg").innerHTML=p.qs.length?"<small>✅ Đọc được "+p.qs.length+" câu, "+p.secs.length+" phần"+(p.bad?" · bỏ qua "+p.bad+" câu thiếu đáp án":"")+"</small>":""}
+$("ta").oninput=refresh;refresh();
+$("samp").onclick=()=>{$("ta").value=SAMPLE;refresh()};
+$("f").onchange=e=>{const r=new FileReader();r.onload=()=>{$("ta").value=r.result;refresh()};r.readAsText(e.target.files[0])};
+$("go").onclick=()=>{const t=$("ta").value,p=parse(t);
+ if(!p.qs.length){$("msg").innerHTML='<p style="color:var(--no)">Chưa đọc được câu nào. Kiểm tra lại định dạng nhé.</p>';return}
+ try{localStorage.setItem("bb_text",t)}catch(e){}
+ Q=p.qs;SECS=p.secs;$("msg").innerHTML='';start()};
+function start(){Q.forEach(q=>q.w=0);const v=$("ms").value,all=SECS.map((_,i)=>i).filter(i=>Q.some(q=>q.s===i));
+ S={xp:0,best:0,wrong:0,si:0,f:1,sh:false,secs:(v==="all"||!v)?all:[+v]};$("setup").classList.add("hide");boss()}
+function boss(){const sec=S.secs[S.si];S.q=sh(Q.filter(q=>q.s===sec));S.tot=S.left=S.q.length;S.hp=5;S.cb=0;
+ $("end").classList.add("hide");$("game").classList.remove("hide");$("bn").textContent="Boss · "+SECS[sec];next()}
+const BL=["👹","🐉","🧟","👻","🦑","🤖","👽","🦖","😈","💀"];
+function hud(){const p=S.left/S.tot;$("bh").style.width=p*100+"%";$("bt").textContent=S.left+"/"+S.tot+" máu";
+ $("hp").textContent="❤️".repeat(S.hp)+"🖤".repeat(5-S.hp)+(S.sh?" 🛡️":"");$("cb").textContent=S.cb>1?"🔥 Combo x"+S.cb:"";
+ $("xp").textContent="Lv."+(1+S.xp/100|0)+" · "+S.xp+" XP";$("boss").textContent=p>0?BL[S.secs[S.si]%BL.length]:"💥";
+ const pw=$("pw");pw.innerHTML="";if(S.f>0&&!S.done){const b=document.createElement("button");b.className="g";b.textContent="🔮 Loại 2 đáp án sai ("+S.f+")";b.onclick=fifty;pw.appendChild(b)}}
+function next(){clearInterval(tmr);S.done=false;$("fb").innerHTML="";hud();
+ if(S.left<=0)return fin(true);
+ const q=S.q.shift();S.cur=q;const idx=sh(q.o.map((_,i)=>i));
+ $("qt").textContent=q.q;$("ops").innerHTML="";
+ idx.forEach((i,k)=>{const b=document.createElement("button");b.className="opt";b.textContent=(k+1)+". "+q.o[i];b.onclick=()=>ans(i,b);b.dataset.i=i;$("ops").appendChild(b)});
+ if($("tm").checked){$("tb").classList.remove("hide");let t=200;tmr=setInterval(()=>{t--;$("tf").style.width=t/2+"%";if(t<=0){clearInterval(tmr);ans(-1)}},100)}else $("tb").classList.add("hide")}
+function ans(i,b){clearInterval(tmr);S.done=true;const q=S.cur,ok=i===q.a;
+ document.querySelectorAll(".opt").forEach(x=>{x.disabled=true;if(+x.dataset.i===q.a)x.classList.add("ok")});
+ if(ok){const lv0=1+S.xp/100|0;S.cb++;S.best=Math.max(S.best,S.cb);S.left--;const crit=S.cb>=5,g=(10+Math.min(S.cb,10)*2)*(crit?2:1);S.xp+=g;
+  pop("+"+g+" XP"+(crit?" 💥CRIT!":""),"var(--ok)");snd(660);setTimeout(()=>snd(880),90);
+  if(S.cb===3){S.f++;pop("🔮 +1 trợ giúp","var(--ac)")}if(S.cb%5===0){S.sh=true;pop("🛡️ Có khiên!","var(--ac)")}
+  if((1+S.xp/100|0)>lv0){pop("⬆️ LEVEL UP!","var(--ac)");snd(1100,.3)}
+  $("boss").classList.remove("hit");void $("boss").offsetWidth;$("boss").style.transform="scale(.85)";setTimeout(()=>$("boss").style.transform="",200);
+  $("fb").innerHTML="<b style='color:var(--ok)'>⚔️ Trúng đòn!</b>";hud();const e=ex(q);
+  if(e){$("fb").appendChild(e);const n=document.createElement("button");n.textContent="Tiếp tục";n.onclick=next;$("fb").appendChild(n)}else setTimeout(next,800)}
+ else{if(b)b.classList.add("no");S.cb=0;q.w=(q.w||0)+1;S.wrong++;const sh1=S.sh;if(sh1)S.sh=false;else S.hp--;snd(140,.3,"sawtooth");
+  S.q.splice(Math.min(S.q.length,3+(Math.random()*3|0)),0,q);
+  $("boss").classList.remove("hit");void $("boss").offsetWidth;$("boss").classList.add("hit");hud();
+  $("fb").innerHTML="<p style='color:var(--no)'>"+(sh1?"<b>🛡️ Khiên đỡ đòn, không mất tim!</b>":"<b>💥 Trượt rồi!</b>")+" Câu này sẽ quay lại sau ít phút nữa.</p>";
+  const e=ex(q);if(e)$("fb").appendChild(e);
+  const n=document.createElement("button");n.textContent="Tiếp tục";n.onclick=()=>S.hp<=0?fin(false):next();$("fb").appendChild(n)}}
+function ex(q){if(!q.e)return null;const d=document.createElement("div");d.style.cssText="text-align:left;margin:10px 0;padding:10px;border-radius:10px;background:var(--bg);font-size:14px";d.textContent="💡 "+q.e;return d}
+function fin(w){S.done=true;$("game").classList.add("hide");if(w){conf();[523,659,784,1046].forEach((f,i)=>setTimeout(()=>snd(f,.2),i*140))}else snd(110,.6,"sawtooth");$("end").classList.remove("hide");
+ const more=w&&S.si<S.secs.length-1;S.adv=more;S.all=w&&!more;$("ei").textContent=w?(more?"🏆":"👑"):"☠️";
+ $("et").textContent=w?(more?"Hạ gục "+SECS[S.secs[S.si]]+"!":"Thắng toàn bộ!"):"Bạn đã gục ngã";
+ $("re").textContent=more?"Boss tiếp theo ➡️":w?"Chơi lại từ đầu":"Đánh lại boss này";
+ const hard=Q.filter(q=>q.w).sort((a,b)=>b.w-a.w).slice(0,5);
+ $("hd").innerHTML=hard.length?"<b>🎯 Câu hay sai nhất</b>"+hard.map(q=>"<div>• "+esc(q.q.slice(0,80))+" → <b>"+esc(q.o[q.a])+"</b> ("+q.w+" lần)</div>").join(""):"";
+ $("es").innerHTML=(w?"Đã thuộc hết "+S.tot+" câu của boss này. ":"Còn "+S.left+" câu chưa qua. ")+"<br>Combo dài nhất: <b>"+S.best+"</b> · Số lần sai: <b>"+S.wrong+"</b> · <b>"+S.xp+" XP</b>"}
+let AC,mute=false;
+function snd(f,d=.12,t="sine"){if(mute)return;try{AC=AC||new(window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.type=t;o.frequency.value=f;g.gain.value=.07;o.connect(g);g.connect(AC.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,AC.currentTime+d);o.stop(AC.currentTime+d)}catch(e){}}
+const esc=s=>s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+function pop(t,c){const d=document.createElement("div");d.className="pop";d.textContent=t;d.style.color=c;d.style.top=(18+$("boss").parentNode.querySelectorAll(".pop").length*20)+"%";$("boss").parentNode.appendChild(d);setTimeout(()=>d.remove(),1100)}
+function conf(){for(let i=0;i<30;i++){const d=document.createElement("span");d.className="cf";d.textContent=["🎉","✨","⭐","🏆"][i%4];d.style.left=Math.random()*100+"%";d.style.animationDelay=Math.random()*.8+"s";document.body.appendChild(d);setTimeout(()=>d.remove(),3400)}}
+function fifty(){S.f--;const w=sh([...document.querySelectorAll(".opt")].filter(x=>+x.dataset.i!==S.cur.a));w.slice(0,Math.min(2,w.length-1)).forEach(x=>{x.disabled=true;x.style.opacity=.25});snd(520);hud()}
+$("mu").onclick=()=>{mute=!mute;$("mu").textContent=mute?"🔇":"🔊"};
+document.onkeydown=e=>{if($("game").classList.contains("hide"))return;if(e.key==="Enter"){e.preventDefault();const n=$("fb").querySelector("button");if(n)n.click();return}const o=document.querySelectorAll(".opt")[+e.key-1];if(o&&!o.disabled)o.click()};
+$("re").onclick=()=>{if(S.adv)S.si++;else if(S.all){S.si=0;S.xp=0}boss()};$("bk").onclick=()=>{$("end").classList.add("hide");$("setup").classList.remove("hide")};
+</script></body></html>
